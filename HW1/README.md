@@ -6,7 +6,7 @@
 
 結果：</br>
 
-
+![image](https://github.com/aldrich1221/FinTech_MachineLearning/blob/master/HW1/HW1_1/Result1.png?raw=true)
 
 
 第二部分： 失業率爬蟲
