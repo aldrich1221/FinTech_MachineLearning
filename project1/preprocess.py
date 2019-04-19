@@ -48,6 +48,13 @@ for words in stoplst:
 
 
 df_terms = pd.read_csv('data.csv')
+
+
+UniqueID=df_terms['Unique ID'].unique()
+
+print(UniqueID)
+
+
 #df_terms.drop('Unnamed: 0', axis = 1, inplace = True)
 
 
@@ -74,35 +81,149 @@ df_terms = pd.read_csv('data.csv')
 
 names = {}          
 relationships = {}  
-lineNames = []  
+lineNames = [] 
+
+MyText=np.array(len(UniqueID))
+#print(MyText.shape)
 for i in range(len(df_terms['客戶事件描述'])):
     try:
         poss = jieba.cut(df_terms['客戶事件描述'][i], cut_all = False)
         lineNames.append([])
+        #MyText.append([])
         for w in poss:
             if w not in stopWords:
-                lineNames[-1].append(w) 
+                #lineNames[-1].append(w) 
+
+                lineNames[np.min(np.where(df_terms['Unique ID'][i]==UniqueID))].append(w) 
+                #print(np.min(np.where(df_terms['Unique ID'][i]==UniqueID)))
+                #MyText[np.where(df_terms['Unique ID'][i]==UniqueID)].append(w)
                 #print("W:",w)       
             if names.get(w) is None and w not in stopWords:    
                 relationships[w] = {}            
     except:
         pass
 
-term_dic = dict()
+#print(MyText)
+lineNames = list(filter(lambda a: a != [], lineNames))
+#print(lineNames)
+
+
+# term_dic = dict()
+# for sentence in lineNames:
+#     for term in sentence:
+#         if term not in term_dic:
+#             term_dic[term] = {}
+
+# for i in range(len(lineNames)):
+#     for term1 in term_dic:
+#         num = 0
+#         for term2 in lineNames[i]:
+#             if term1 == term2:
+#                 num += 1
+#         term_dic[term1][df_terms['客戶事件描述'][i]] = num
+
+
+# for sentence in MyText:
+#     for term in sentence:
+#         if term not in term_dic:
+#             term_dic[term] = {}
+
+# for i in range(len(MyText)):
+#     for term1 in term_dic:
+#         num = 0
+#         for term2 in MyText[i]:
+#             if term1 == term2:
+#                 num += 1
+#         term_dic[term1][df_terms['客戶事件描述'][i]] = num
+
+
+# TDM = pd.DataFrame.from_dict(term_dic)
+# print(TDM)
+
+
+
+from collections import defaultdict
+wordsCount = defaultdict(int)
+tfs = []
+
 for sentence in lineNames:
-    for term in sentence:
-        if term not in term_dic:
-            term_dic[term] = {}
-
-for i in range(len(lineNames)):
-    for term1 in term_dic:
-        num = 0
-        for term2 in lineNames[i]:
-            if term1 == term2:
-                num += 1
-        term_dic[term1][df_terms['客戶事件描述'][i]] = num
-
-TDM = pd.DataFrame.from_dict(term_dic)
-print(TDM.head())
+	for word in sentence:
+		wordsCount[word] += 1
 
 
+
+for sentence in lineNames:
+	tf = defaultdict(int)
+	for word in sentence:
+		if wordsCount[word] > 2:
+			tf[word] = sentence.count(word) / len(sentence)
+	tfs.append(tf)
+
+print(tfs[0])
+
+idf = defaultdict(int)
+import math
+for word in wordsCount:
+	count = 0
+	for sentence in lineNames:
+		if word in sentence:
+			count += 1
+	idf[word] = math.log(len(lineNames) / count)
+
+#print(idf)
+
+tf_idfs = []
+
+
+def mysort(adict):
+	items=adict.items()
+	items.sort()
+	return [value for key,value in items]
+
+for tf in tfs:
+	tf_idf = defaultdict()
+	for word in tf:
+		tf_idf[word] = tf[word] * idf[word]
+	#sorted_tfidf=mysort(tf_idf)
+	#tf_idfs.append(sorted_tfidf)
+	tf_idfs.append(tf_idf)
+
+
+
+for i in range(len(tf_idfs)):
+	print(max(tf_idfs[i],key=tf_idfs[i].get))
+
+
+
+
+# import nltk
+
+# tree1=nltk.Tree('NP',['aa'])
+# tree2=nltk.Tree('N',['aa','bb'])
+# tree3=nltk.Tree('S',[tree1,tree2])
+
+# print(tree3)
+#tree3.draw()
+
+
+
+
+#print(TDM.head())
+
+
+# import jieba.posseg as pseg
+
+# cutcorpusiter = lineNames.copy()
+# cutcorpus = lineNames.copy()
+# cixingofword = []  # 儲存分詞後的詞語對應的詞性
+# wordtocixing = []  # 儲存分詞後的詞語
+# for i in range(len(lineNames)):
+#     cutcorpusiter[i] = pseg.cut(lineNames[i])
+#     cutcorpus[i] = ""
+#     for every in cutcorpusiter[i]:   
+#         cutcorpus[i] = (cutcorpus[i] + " " + str(every.word)).strip()
+#         cixingofword.append(every.flag)
+#         wordtocixing.append(every.word)
+# # 自己造一個{“詞語”:“詞性”}的字典，方便後續使用詞性
+# word2flagdict = {wordtocixing[i]:cixingofword[i] for i in range(len(wordtocixing))}
+# print(word2flagdict)
