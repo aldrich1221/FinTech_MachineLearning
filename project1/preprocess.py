@@ -159,7 +159,7 @@ for sentence in lineNames:
 			tf[word] = sentence.count(word) / len(sentence)
 	tfs.append(tf)
 
-print(tfs[0])
+#print(tfs[0])
 
 idf = defaultdict(int)
 import math
@@ -189,11 +189,51 @@ for tf in tfs:
 	tf_idfs.append(tf_idf)
 
 
-
+Maxlist=list()
 for i in range(len(tf_idfs)):
-	print(max(tf_idfs[i],key=tf_idfs[i].get))
+	print(UniqueID[i],max(tf_idfs[i],key=tf_idfs[i].get))
+	Maxlist.append(max(tf_idfs[i],key=tf_idfs[i].get))
 
 
+
+
+Uniquelist=np.unique(Maxlist)
+#print(Maxlist)
+Countdict=defaultdict(int)
+TextDict = defaultdict(list)
+
+for i in range(len(Uniquelist)):
+	#print(np.where(Uniquelist[i]==np.array(Maxlist)))
+	
+	#Countdict{Uniquelist[i]: UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))]}
+	Countdict[Uniquelist[i]]= UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))]
+
+	
+	TextDict[Uniquelist[i]] =len(UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))])
+
+sorted_countDict = sorted(Countdict.items(), key = lambda kv: len(kv[1]))
+
+# print(sorted_countDict)
+
+ourList = []
+for item in sorted_countDict:
+	a = []
+	a.append(item[0])
+	a.append(item[1])
+	a.append(len(item[1]))
+	ourList.append(a)
+	#print(Countdict)
+	#Countlist(Maxlist.count(Uniquelist[i]))
+
+for item in ourList:
+	if item[2] >= 4:
+		print(item)
+
+
+
+
+
+##. 亞太複合債、IPO、nn、NN、基金、新興市場、環球、新興債、優惠、Q1、Q3、債、中國、亞高
 
 
 # import nltk
