@@ -82,11 +82,12 @@ UniqueID=df_terms['Unique ID'].unique()
 names = {}          
 relationships = {}  
 lineNames = [] 
-
+AllText=[]
 MyText=np.array(len(UniqueID))
 #print(MyText.shape)
 for i in range(len(df_terms['客戶事件描述'])):
     try:
+
         poss = jieba.cut(df_terms['客戶事件描述'][i], cut_all = False)
         lineNames.append([])
         #MyText.append([])
@@ -105,110 +106,119 @@ for i in range(len(df_terms['客戶事件描述'])):
 
 #print(MyText)
 lineNames = list(filter(lambda a: a != [], lineNames))
-#print(lineNames)
+#print(lineNames[0])
 
 
-# coding=utf-8
-# import jieba 
-# from hanziconv import HanziConv
-
-# fileTrainRead = []
-# with open('./mytest_corpus.txt') as fileTrainRaw:
-#   for line in fileTrainRaw:
-#       fileTrainRead.append(HanziConv.toTraditional(line)) 
-
-
-#import word2vec
-from gensim.models import word2vec
-
-
-model=word2vec.Word2Vec(lineNames,size=300)
-# model=word2vec.load(myword2vecmodel.bin)
-model.train(lineNames, total_examples=len(lineNames), epochs=1)
-#print(model.vectors)
-#print(model.most_similar(['玉山']))
-vector=model.wv
-print(vector)
-
-
-terms = ['亞太複合債','IPO','nn','NN','基金','新興市場','環球','新興債','優惠','Q1','Q3','債','中國','亞高']  
-df = {}
-for t in terms:
-   
-    try:
-    	df[t] = [term for term, score in model.most_similar(t)]  
-    except:
-   	
-   		print("不在詞庫")
-
-df = pd.DataFrame(df)
-print(df)
-
-#IPO   NN   基金   環球  新興債   優惠   Q1   Q3    債   中國
-#
+import sys
+import gensim
 import numpy as np
-
-import matplotlib
-import matplotlib.pyplot as plt
+ 
+from gensim.models.doc2vec import Doc2Vec, LabeledSentence
+from sklearn.cluster import KMeans
 
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+ 
+TaggededDocument = gensim.models.doc2vec.TaggedDocument
+x_train = []
 
-# pca = PCA(n_components=2)
-# X = model[model.wv.vocab]
-# result = pca.fit_transform(X)
-# # 可视化展示
-# plt.scatter(result[:, 0], result[:, 1])
-# words = list(model.wv.vocab)
-# for i, word in enumerate(words):
-# 	plt.annotate(word, xy=(result[i, 0], result[i, 1]))
-# plt.show()
+for i, text in enumerate(lineNames):
+        
+        
+        document = TaggededDocument(text, tags=[i])
+        x_train.append(document)
 
+print(x_train[2])
 
-
-
-
-
-
-keys=model.wv.vocab.keys()
-    
+model_dm = Doc2Vec(x_train,min_count=1, window = 3, size = 200, sample=1e-3, negative=5, workers=4)
+model_dm.train(x_train, total_examples=model_dm.corpus_count, epochs=100)
 
 wordvector=[]
-for key in keys:
-    wordvector.append(model[key])
+for text, label in x_train:
+    vector = model_dm.infer_vector(text)
+    wordvector.append(vector)
+    i += 1
 
-#分类
-# clf = KMeans(n_clusters=5)
-# s = clf.fit(wordvector)
-kmeans_model = KMeans(n_clusters=3, max_iter=100)
+
+kmeans_model = KMeans(n_clusters=2)
+kmeans_model.fit(wordvector)
+#labels= kmean_model.predict(infered_vectors_list[0:100])
+#cluster_centers = kmean_model.cluster_centers_
+
+
 
 X = kmeans_model.fit(wordvector)
 labels=kmeans_model.labels_.tolist()
 #l = kmeans_model.fit_predict(d2v_model.docvecs.doctag_syn0)
-pca = PCA(n_components=2).fit(wordvector)
+pca = PCA(n_components=3).fit(wordvector)
 datapoint = pca.transform(wordvector)
-
+print("datashape:",datapoint.shape)
 import matplotlib.pyplot as plt
 
 plt.figure
 label1 = ['#FFFF00', '#008000', '#0000FF', '#800080']
 color = [label1[i] for i in labels]
-plt.scatter(datapoint[:, 0], datapoint[:, 1], c=color)
+
+plt.subplot(3,1,1)
+#plt.scatter(datapoint[:, 0], datapoint[:, 1], c=color)
 centroids = kmeans_model.cluster_centers_
 centroidpoint = pca.transform(centroids)
 plt.scatter(centroidpoint[:, 0], centroidpoint[:, 1], marker='x', s=150, c='#000000')
+plt.xlim([-12,12])
+plt.ylim([-12,12])
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+for i, word in enumerate(UniqueID):
+    #print(word)
+    #plt.annotate(i, xy=(datapoint[i, 0], datapoint[i, 1]))
+    if labels[i]==0:
+        thiscolor='r'
+    elif labels[i]==1:
+        thiscolor='b'
+    plt.text(datapoint[i, 0], datapoint[i, 1], word,
+         fontdict={'size': 5, 'color': thiscolor})
 
+plt.subplot(3,1,2)
+#plt.scatter(datapoint[:, 1], datapoint[:, 2], c=color)
+centroids = kmeans_model.cluster_centers_
+centroidpoint = pca.transform(centroids)
+plt.scatter(centroidpoint[:, 1], centroidpoint[:, 2], marker='x', s=150, c='#000000')
+plt.xlim([-12,12])
+plt.ylim([-12,12])
+plt.xlabel("PC2")
+plt.ylabel("PC3")
+for i, word in enumerate(UniqueID):
+    #print(word)
+    #plt.annotate(i, xy=(datapoint[i, 0], datapoint[i, 1]))
+    if labels[i]==0:
+        thiscolor='r'
+    elif labels[i]==1:
+        thiscolor='b'
+    plt.text(datapoint[i, 1], datapoint[i, 2], word,
+         fontdict={'size': 5, 'color': thiscolor})
+plt.subplot(3,1,3)
+#plt.scatter(datapoint[:, 0], datapoint[:, 2], c=color)
+centroids = kmeans_model.cluster_centers_
+centroidpoint = pca.transform(centroids)
+plt.scatter(centroidpoint[:, 0], centroidpoint[:, 2], marker='x', s=150, c='#000000')
+plt.xlim([-12,12])
+plt.ylim([-12,12])
+plt.xlabel("PC1")
+plt.ylabel("PC3")
+for i, word in enumerate(UniqueID):
+    #print(word)
+    #plt.annotate(i, xy=(datapoint[i, 0], datapoint[i, 1]))
+    if labels[i]==0:
+        thiscolor='r'
+    elif labels[i]==1:
+        thiscolor='b'
+    plt.text(datapoint[i, 0], datapoint[i, 2], word,
+         fontdict={'size': 5, 'color': thiscolor})
 #print(list(model.wv.vocab))
+#words = list(model.wv.vocab)
+print(len(UniqueID),len(wordvector))
 
-from matplotlib.font_manager import FontProperties
-import matplotlib.pyplot as plt 
-myfont = FontProperties(fname=r'/Users/aldrich/Library/Fonts/wqy-microhei.ttc')
 
-words = list(model.wv.vocab)
-for i, word in enumerate(words):
-	#print(word)
-	#plt.annotate(i, xy=(datapoint[i, 0], datapoint[i, 1]))
-	plt.text(datapoint[i, 0], datapoint[i, 1], word,
-         fontdict={'size': 2 , 'color': 'r'},fontproperties=myfont)
 plt.show()
+
 
