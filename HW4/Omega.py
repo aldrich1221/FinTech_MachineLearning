@@ -1,0 +1,6 @@
+
+
+
+def Omega(PriceSeries,L):
+	
+
