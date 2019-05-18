@@ -188,46 +188,52 @@ for tf in tfs:
 	#tf_idfs.append(sorted_tfidf)
 	tf_idfs.append(tf_idf)
 
+print(UniqueID[0],tf_idfs[0])
 
-Maxlist=list()
-for i in range(len(tf_idfs)):
-	print(UniqueID[i],max(tf_idfs[i],key=tf_idfs[i].get))
-	Maxlist.append(max(tf_idfs[i],key=tf_idfs[i].get))
+print(UniqueID[1],tf_idfs[1])
+
+print(UniqueID[2],tf_idfs[2])
+print(UniqueID[3],tf_idfs[3])
+print(UniqueID[4],tf_idfs[4])
+# Maxlist=list()
+# for i in range(len(tf_idfs)):
+# 	#print(UniqueID[i],max(tf_idfs[i],key=tf_idfs[i].get))
+# 	Maxlist.append(max(tf_idfs[i],key=tf_idfs[i].get()))
 
 
 
 
-Uniquelist=np.unique(Maxlist)
-#print(Maxlist)
-Countdict=defaultdict(int)
-TextDict = defaultdict(list)
+# Uniquelist=np.unique(Maxlist)
+# #print(Maxlist)
+# Countdict=defaultdict(int)
+# TextDict = defaultdict(list)
 
-for i in range(len(Uniquelist)):
-	#print(np.where(Uniquelist[i]==np.array(Maxlist)))
+# for i in range(len(Uniquelist)):
+# 	#print(np.where(Uniquelist[i]==np.array(Maxlist)))
 	
-	#Countdict{Uniquelist[i]: UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))]}
-	Countdict[Uniquelist[i]]= UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))]
+# 	#Countdict{Uniquelist[i]: UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))]}
+# 	Countdict[Uniquelist[i]]= UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))]
 
 	
-	TextDict[Uniquelist[i]] =len(UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))])
+# 	TextDict[Uniquelist[i]] =len(UniqueID[np.where(Uniquelist[i]==np.array(Maxlist))])
 
-sorted_countDict = sorted(Countdict.items(), key = lambda kv: len(kv[1]))
+# sorted_countDict = sorted(Countdict.items(), key = lambda kv: len(kv[1]))
 
-# print(sorted_countDict)
+# # print(sorted_countDict)
 
-ourList = []
-for item in sorted_countDict:
-	a = []
-	a.append(item[0])
-	a.append(item[1])
-	a.append(len(item[1]))
-	ourList.append(a)
-	#print(Countdict)
-	#Countlist(Maxlist.count(Uniquelist[i]))
+# ourList = []
+# for item in sorted_countDict:
+# 	a = []
+# 	a.append(item[0])
+# 	a.append(item[1])
+# 	a.append(len(item[1]))
+# 	ourList.append(a)
+# 	#print(Countdict)
+# 	#Countlist(Maxlist.count(Uniquelist[i]))
 
-for item in ourList:
-	if item[2] >= 4:
-		print(item)
+# for item in ourList:
+# 	if item[2] >= 4:
+# 		print(item)
 
 
 

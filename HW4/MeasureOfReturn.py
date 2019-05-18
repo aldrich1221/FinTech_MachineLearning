@@ -2,10 +2,6 @@ import math
 import numpy
 import numpy.random as nrand
 
-"""
-Note - for some of the metrics the absolute value is returns. This is because if the risk (loss) is higher we want to
-discount the expected excess return from the portfolio by a higher amount. Therefore risk should be positive.
-"""
 
 
 import pandas as pd
@@ -41,7 +37,8 @@ def Month2int(monthstr):
     else:
         return 0
 
-def ReadData():
+def ReadData(Frequency):
+
     ETF_File=pd.read_csv('Commodity ETF List (125).csv')
 
     ChooseETFSymbol=list()
@@ -57,7 +54,7 @@ def ReadData():
 
     AllETFDataFrame=pd.DataFrame()
     ETFcount=0
-    for ETF in ChooseETFSymbol[-3:]:
+    for ETF in ChooseETFSymbol:
 
         DateList=list()
         AdjCloseList=list()
@@ -102,11 +99,12 @@ def ReadData():
                             
                         dataDatetime=datetime.date(int(DateStrings[2]),Month2int(DateStrings[0]),int(DateStrings[1]))
                     datacount=datacount+1
-                
-                AdjCloseList.append(pricedata)
+                #print(pricedata)
+                AdjCloseList.append(float(pricedata.replace(",","")))
                 DateList.append(dataDatetime)
 
         ETFDataFrame=pd.DataFrame(AdjCloseList,columns=[str(ETF)],index=DateList).sort_index()
+
         #print(ETFDataFrame)
         if ETFcount==0:
             AllETFDataFrame=ETFDataFrame
@@ -115,20 +113,46 @@ def ReadData():
             
             AllETFDataFrame=AllETFDataFrame.join(ETFDataFrame,how='left',sort=True)
             
-        ETFcount=ETFcount+1
-    print(AllETFDataFrame)
-    return AllETFDataFrame
+        ETFcount=ETFcount+1 
+    AllETFDataFrame.index=pd.to_datetime(AllETFDataFrame.index)
+    AllETFDataFrame.index.name='Date'
+    AllETFDataFrame.index.drop_duplicates(keep='first')
+    #AllETFDataFrame.apply(lambda x : x.drop_duplicates(subset='Date',keep='first'))
+    
+    if Frequency=='M':
+        # dfg = AllETFDataFrame.groupby(pd.TimeGrouper('M'))
+        # print(dfg)
+        # business_end_day = dfg.agg('Date':np.max)['Date'].tolist()
+        # ReturnFrame=AllETFDataFrame[business_end_day]
+        # ReturnFrame=AllETFDataFrame.groupby('Date').apply(lambda x : x.drop_duplicates('Date')
+        #                                   .set_index('Date')
+        #                                   .resample('M')
+        #                                   .ffill())
+        ReturnFrame=AllETFDataFrame.resample('M').mean()
+    elif Frequency=='W':
+        ReturnFrame=AllETFDataFrame.resample('w',label='right', closed='right').pad()
+    else:
+        ReturnFrame=AllETFDataFrame
+    print(ReturnFrame)
+    return ReturnFrame
 
-
+def sortedDictValues1(adict): 
+    items = adict.items() 
+    items.sort() 
+    return [value for key, value in items] 
+def sortedDictValues2(adict): 
+    keys = adict.keys() 
+    keys.sort() 
+    return [dict[key] for key in keys] 
 def vol(returns):
-    # Return the standard deviation of returns
+    
     return numpy.std(returns)
 
 
 def beta(returns, market):
-    # Create a matrix of [returns, market]
+    
     m = numpy.matrix([returns, market])
-    # Return the covariance of m divided by the standard deviation of the market returns
+    
     return numpy.cov(m)[0][1] / numpy.std(market)
 
 
@@ -200,6 +224,7 @@ def dd(returns, tau):
         pos, pre = pos - 1, pre - 1
     # Drawdown should be positive
     return abs(drawdown)
+
 
 
 def max_dd(returns):
@@ -333,7 +358,7 @@ def test_risk_adjusted_metrics():
     print("Excess VaR =", excess_var(e, r, f, 0.05))
     print("Conditional Sharpe Ratio =", conditional_sharpe_ratio(e, r, f, 0.05))
     print("")
-    # Risk-adjusted return based on Lower Partial Moments
+    
     print("Omega Ratio =", omega_ratio(e, r, f))
     print("Sortino Ratio =", sortino_ratio(e, r, f))
     print("Kappa 3 Ratio =", kappa_three_ratio(e, r, f))
@@ -345,25 +370,46 @@ def test_risk_adjusted_metrics():
     print("Burke Ratio =", burke_ratio(e, r, f, 5))
 
 def ComputeOmega():
-    AllData=ReadData()
+    import pandas as pd
+    #AllData=ReadData('M')
 
     #模擬市場m與投組r的報酬
     #r = nrand.uniform(-1, 1, 50)
     #m = nrand.uniform(-1, 1, 50)
-    print(AllData["LD"].values[1:])
-    r1=(AllData["LD"].values[1:]-AllData["LD"].values[:-1])/AllData["LD"].values[:-1]
-    r2=(AllData["DDP"].values[1:]-AllData["DDP"].values[:-1])/AllData["DDP"].values[:-1]
-    m=(AllData["SPY"].values[1:]-AllData["SPY"].values[:-1])/AllData["SPY"].values[:-1]
-    #m=AllData["SPY"].values.pct_change()
-    # Expected return
-    #投組期望報酬
-    e = numpy.mean(r1)
-    # 無風險利率
-    f = 0.06
-    
-    
-    # Risk-adjusted return based on Lower Partial Moments
-    print("Omega Ratio =", omega_ratio(e, r1, f))
+    ETFName=AllData.columns
+    ResultDict=dict()
+    for etf in ETFName[:-1]:
+        Asset=AllData[etf].values
+        SPY=AllData["SPY"].values
+
+        # Asset=MyDataFrameProcess(AllData[etf].values)
+        # SPY=MyDataFrameProcess(AllData["SPY"].values)
+
+
+        r1=(Asset[1:]-Asset[:-1])/Asset[:-1]
+        #r2=(AllData["DDP"].values[1:]-AllData["DDP"].values[:-1])/AllData["DDP"].values[:-1]
+        m=(SPY[1:]-SPY[:-1])/SPY[:-1]
+        #m=AllData["SPY"].values.pct_change()
+        # Expected return
+        #投組期望報酬
+        e = numpy.mean(r1)
+        # 無風險利率
+        f = 0.06
+        ResultDict[etf]=omega_ratio(e, r1, f)
+        
+        # Risk-adjusted return based on Lower Partial Moments
+        #print(etf,"Omega Ratio =", omega_ratio(e, r1, f))
+    #ResultDict_Sort=[ v for v in sorted(ResultDict.values())]  
+    import operator
+    ResultDict_Sort=sorted(ResultDict.items(),key=operator.itemgetter(1),reverse=True)   
+    #ResultDict_Sort=[(k,ResultDict[k]) for k in sorted(ResultDict.keys())]
+    Result=pd.DataFrame.from_dict(ResultDict_Sort)
+    Result.index.name='Ranking'
+    Result.columns=['ETF','Value']
+    #ResultDict_Sort=sortedDictValues2(ResultDict)
+    #for 
+    print(Result)
+
 from functools import reduce
 def str2float(s):
     def fn(x,y):
@@ -372,7 +418,7 @@ def str2float(s):
     s1=list(map(int,[x for x in s[:n]]))
     s2=list(map(int,[x for x in s[n+1:]]))
     return reduce(fn,s1) + reduce(fn,s2)/10**len(s2)
-print('\'123.4567\'=',str2float('123.4567')) 
+#print('\'123.4567\'=',str2float('123.4567')) 
 def MyDataFrameProcess(Strlist):
     import numpy as np
     AnsList=list()
@@ -381,42 +427,70 @@ def MyDataFrameProcess(Strlist):
         AnsList.append(str2float(Strlist[i]))
     return np.array(AnsList)
 
-def GeneralizedSharpe():
+def ComputeGeneralizedSharpe():
 
     import numpy as np
     import math
     from scipy.stats import skew
     from scipy.stats import kurtosis
-    AllData=ReadData()
+    #AllData=ReadData('M')
+    ETFName=AllData.columns
+    ResultDict=dict()
+    for etf in ETFName[:-1]:
+        # Asset=MyDataFrameProcess(AllData[etf].values)
+        # SPY=MyDataFrameProcess(AllData["SPY"].values)
+        Asset=AllData[etf].values
+        SPY=AllData["SPY"].values
+        
+        #print(LD)
+        #ej3ru84=array(pd.DataFrame(LD).pct_change().values).reshape(len(LD))
+        Asset_Return=(Asset[1:]-Asset[:-1])/Asset[:-1]
+        #print(Asset_Return)
+        mean = np.mean(Asset_Return)
+        standard = np.std(Asset_Return)
+        variance = np.var(Asset_Return)
+        S = skew(Asset_Return)
+        K = kurtosis(Asset_Return)
+        if K>3+(5/3)*S*S:
+        #print(S,K,K>3+(5/3)*S*S)
+            a = 3*math.sqrt(3*K-4*(S**2)-9)/variance*(3*K-5*(S**2)-9)
+            b = 3*S/standard*(3*K-5*(S**2)-9)
+            n = mean-(3*S*standard)/(3*K-4*(S**2)-9)
+            d = 3*standard*math.sqrt(3*K-4*(S**2)-9)/(3*K-5*(S**2)-9)
+            phi = math.sqrt((a**2)-(b**2))
 
-    LD=MyDataFrameProcess(AllData["SPY"].values)
-    #print(LD)
-    #ej3ru84=array(pd.DataFrame(LD).pct_change().values).reshape(len(LD))
-    Asset_Return=(LD[1:]-LD[:-1])/LD[:-1]
-    print(Asset_Return)
-    mean = np.mean(Asset_Return)
-    standard = np.std(Asset_Return)
-    variance = np.var(Asset_Return)
-    S = skew(Asset_Return)
-    K = kurtosis(Asset_Return)
-    print(S,K,K>3+(5/3)*S*S)
-    a = 3*math.sqrt(3*K-4*(S**2)-9)/variance*(3*K-5*(S**2)-9)
-    b = 3*S/standard*(3*K-5*(S**2)-9)
-    n = mean-(3*S*standard)/(3*K-4*(S**2)-9)
-    d = 3*standard*math.sqrt(3*K-4*(S**2)-9)/(3*K-5*(S**2)-9)
-    phi = math.sqrt((a**2)-(b**2))
+            rf = 0.02 # 定存利率
+            lamda = 0.1
+            astar = 1/lamda*(b+(a*(n-rf)/math.sqrt((d**2)+((n-rf)**2))))
+            asksr = math.sqrt(2*(lamda*astar*(n-rf)-d*(phi-math.sqrt((a**2)-((b-lamda*astar)**2)))))
+        else:
+            a=0
+            b = 3*S/standard*(3*K-5*(S**2)-9)
+            n = mean-(3*S*standard)/(3*K-4*(S**2)-9)
+            d = 0
+            phi = 0
 
-    rf = 0.02 # 定存利率
-    lamda = 0.5
-    astar = 1/lamda*(b+(a*(n-rf)/math.sqrt((d**2)+((n-rf)**2))))
-    asksr = math.sqrt(2*(lamda*astar*(n-rf)-d*(phi-math.sqrt((a**2)-((b-lamda*astar)**2)))))
-
-    print("asksr",asksr,a,b,n,d,phi)
+            rf = 0.02 # 定存利率
+            lamda = 0.5
+            #astar = 1/lamda*(b+(a*(n-rf)/math.sqrt((d**2)+((n-rf)**2))))
+            asksr = 0
+            ResultDict[etf]=asksr
+        #print("asksr",asksr,a,b,n,d,phi)
+    #ResultDict_Sort=[ v for v in sorted(ResultDict.values())]  
+    import operator
+    ResultDict_Sort=sorted(ResultDict.items(),key=operator.itemgetter(1),reverse=True)  
+    #ResultDict_Sort=[(k,ResultDict[k]) for k in sorted(ResultDict.keys())]
+    Result=pd.DataFrame.from_dict(ResultDict_Sort)
+    Result.index.name='Ranking'
+    Result.columns=['ETF','Value']
+    #ResultDict_Sort=sortedDictValues2(ResultDict)
+    
+    print(Result)
     return asksr
 def ComputeRiskiness():
     from scipy.optimize import fsolve,leastsq,root
     import numpy as np
-    AllData=ReadData()
+    #AllData=ReadData('M')
 
 
     def f(alpha):
@@ -425,32 +499,60 @@ def ComputeRiskiness():
         for i in range(len(gamble)):
             sum=np.exp(-gamble[i]*alpha)+sum
 
-        print("sum",sum,len(gamble))
+        #print("sum",sum,len(gamble))
         return sum-len(gamble)
-    Asset=MyDataFrameProcess(AllData["SPY"].values)
-    print(Asset)
-    #ej3ru84=array(pd.DataFrame(LD).pct_change().values).reshape(len(LD))
-    #Asset_Return=(Asset[1:]-Asset[:-1])/Asset[:-1]
-    Asset_Return=((Asset[1:]-Asset[:-1])/Asset[:-1])/10000
-    
-    print(Asset_Return)
 
 
-    gamble=Asset_Return
-    
-    #print(f(alpha0))
+    ETFName=AllData.columns
+    ResultDict=dict()
+    for etf in ETFName[:-1]:
+        # Risk-adjusted return based on Lower Partial Moments
+        #print(etf,"Omega Ratio =", omega_ratio(e, r1, f))
+        Asset=AllData[etf].values
+        SPY=AllData["SPY"].values
 
-    result=fsolve(f,0.0003)
-    print("Result",result)
-    print("Test",f(result))
-    print("Riskiness",np.exp(-result))
+        #Asset=MyDataFrameProcess(AllData[etf].values)
+        
+        #print(Asset)
+        
+        #ej3ru84=array(pd.DataFrame(LD).pct_change().values).reshape(len(LD))
+        
+        #Asset_Return=(Asset[1:]-Asset[:-1])/Asset[:-1]
+        
+        Asset_Return=((Asset[1:]-Asset[:-1])/Asset[:-1])/10000
+        
+        #print(Asset_Return)
 
+
+
+        gamble=Asset_Return
+        
+        #print(f(alpha0))
+
+        result=fsolve(f,0.0003)
+        #print("Result",result)
+        #print("Test",f(result))
+        #print("Riskiness",np.exp(-result))
+        ResultDict[etf]=np.exp(-result)
+    import operator
+    ResultDict_Sort=sorted(ResultDict.items(),key=operator.itemgetter(1),reverse=True) 
+    #ResultDict_Sort=[ v for v in sorted(ResultDict.values())]    
+    #ResultDict_Sort=[(k,ResultDict[k]) for k in sorted(ResultDict.keys())]
+    Result=pd.DataFrame.from_dict(ResultDict_Sort)
+    Result.index.name='Ranking'
+    Result.columns=['ETF','Value']
+    #ResultDict_Sort=sortedDictValues2(ResultDict)
+     
+    print(Result)
 
 
 
 if __name__ == "__main__":
-    #ComputeOmega()
+    import pandas as pd
+    AllData=ReadData('W')
+    AllData.to_pickle('ETFDataFrame_W')
+    AllData=pd.read_pickle('ETFDataFrame_W')
+    ComputeOmega()
     ComputeRiskiness()
-    #nj04asksr()
-    # test_risk_metrics()
-    # test_risk_adjusted_metrics()
+    ComputeGeneralizedSharpe()
+    

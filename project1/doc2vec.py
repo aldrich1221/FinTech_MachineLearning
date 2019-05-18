@@ -128,9 +128,9 @@ for i, text in enumerate(lineNames):
         document = TaggededDocument(text, tags=[i])
         x_train.append(document)
 
-print(x_train[2])
+#print(x_train[2])
 
-model_dm = Doc2Vec(x_train,min_count=1, window = 3, size = 200, sample=1e-3, negative=5, workers=4)
+model_dm = Doc2Vec(x_train,min_count=1, window = 3, size = 100, sample=1e-3, negative=5, workers=4)
 model_dm.train(x_train, total_examples=model_dm.corpus_count, epochs=100)
 
 wordvector=[]
@@ -140,6 +140,7 @@ for text, label in x_train:
     i += 1
 
 
+print(wordvector[0])
 kmeans_model = KMeans(n_clusters=2)
 kmeans_model.fit(wordvector)
 #labels= kmean_model.predict(infered_vectors_list[0:100])
@@ -217,6 +218,18 @@ for i, word in enumerate(UniqueID):
 #print(list(model.wv.vocab))
 #words = list(model.wv.vocab)
 print(len(UniqueID),len(wordvector))
+ans0=list()
+ans1=list()
+for i in range(len(UniqueID)):
+    if labels[i]==0:
+        ans0.append(UniqueID[i])
+    elif labels[i]==1:
+        ans1.append(UniqueID[i])
+
+
+ans1.sort()
+print("ANS0:",ans0)
+print("ANS1:",ans1)
 
 
 plt.show()

@@ -1,0 +1,5 @@
+Fintech 第六組
+
+Github link:
+
+	https://github.com/aldrich1221/FinTech_MachineLearning/tree/master/HW4
