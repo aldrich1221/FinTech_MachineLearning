@@ -3,8 +3,7 @@
 檔案執行 ：MeasureOfReturn.py
 
 
-![image](https://github.com/aldrich1221/FinTech_MachineLearning/blob/m$
-
+![image](https://github.com/aldrich1221/FinTech_MachineLearning/blob/master/HW4/HW4Result.png?raw=true)
 
 1.月頻率與週頻率可以看出略有不同
 
