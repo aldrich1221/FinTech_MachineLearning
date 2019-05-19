@@ -130,7 +130,7 @@ def ReadData(Frequency):
         #                                   .ffill())
         ReturnFrame=AllETFDataFrame.resample('M').mean()
     elif Frequency=='W':
-        ReturnFrame=AllETFDataFrame.resample('w',label='right', closed='right').pad()
+        ReturnFrame=AllETFDataFrame.resample('w').mean()
     else:
         ReturnFrame=AllETFDataFrame
     print(ReturnFrame)
@@ -407,7 +407,7 @@ def ComputeOmega():
     Result.index.name='Ranking'
     Result.columns=['ETF','Value']
     #ResultDict_Sort=sortedDictValues2(ResultDict)
-    #for 
+     
     print(Result)
 
 from functools import reduce
