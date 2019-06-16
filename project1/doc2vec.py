@@ -79,6 +79,13 @@ UniqueID=df_terms['Unique ID'].unique()
 #plt.show()
 
 
+###找出只有一筆資料的人
+oneDataUser=list()
+for userid in UniqueID:
+    # print(np.where(df_terms['Unique ID']==userid))
+    # print(userid,len(np.where(df_terms['Unique ID']==userid)[0]))
+    if len(np.where(df_terms['Unique ID']==userid)[0])==1:
+       oneDataUser.append(userid) 
 names = {}          
 relationships = {}  
 lineNames = [] 
@@ -106,7 +113,23 @@ for i in range(len(df_terms['客戶事件描述'])):
 
 #print(MyText)
 lineNames = list(filter(lambda a: a != [], lineNames))
+Choose=list()
+#for word in ['推','說','客戶','開戶','想','買','會','說明','基金','月','收到','表單','萬','人民','來','手機','銀行','追','寄回']:
+for word in ['推','說','想','買','說','月']:
+    for i in range(len(lineNames)):
+        #print(word,"vs",lineNames[i])
+        if word in lineNames[i]:
+            Choose.append(UniqueID[i])
+
+#print(Choose)
+print(set(Choose))
+
+
 #print(lineNames[0])
+
+
+
+
 
 
 import sys
@@ -229,9 +252,11 @@ for i in range(len(UniqueID)):
 
 ans1.sort()
 print("ANS0:",ans0)
-print("ANS1:",ans1)
+#print("ANS1:",ans1)
+print("-------------------------")
+#print(set(ans0)-set(oneDataUser))
+print(oneDataUser)
 
-
-plt.show()
+# # plt.show()
 
 
